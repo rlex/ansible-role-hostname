@@ -1,0 +1,44 @@
+- name: Update hostname
+  hostname:
+    name: "{{ hostname_hostname }}"
+  register: hostname
+
+- name: Update /etc/hostname
+  copy:
+    content: "{{ hostname_hostname }}"
+    dest: /etc/hostname
+    owner: root
+    group: root
+    mode: 0644
+  register: etc_hostname
+
+- name: Add records to hosts file
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - regexp: "127.0.0.1"
+      line: "127.0.0.1 localhost.localdomain localhost"
+    - regexp: "::1"
+      line: "::1 ip6-localhost ip6-loopback"
+
+- name: Remove conflicting records from hosts file
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "{{ item.regexp }}"
+    state: absent
+  with_items:
+    - regexp: "127.0.1.1"
+
+- name: add external fqdn record to /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: ".*{{ hostname_ip_address }}"
+    line: "{{ hostname_ip_address }} {{ hostname_hostname }}{% if hostname_hostname != hostname_hostname_short %} {{ hostname_hostname_short }}{% endif %}"
+  register: hosts
+
+- name: re-gather facts after setting hostname
+  setup:
+  when: hostname.changed or hosts.changed or etc_hostname.changed
