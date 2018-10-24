@@ -18,7 +18,7 @@
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
     state: present
-  with_items:
+  loop:
     - regexp: "127.0.0.1"
       line: "127.0.0.1 localhost.localdomain localhost"
     - regexp: "::1"
@@ -29,7 +29,7 @@
     dest: /etc/hosts
     regexp: "{{ item.regexp }}"
     state: absent
-  with_items:
+  loop:
     - regexp: "127.0.1.1"
 
 - name: add external fqdn record to /etc/hosts
